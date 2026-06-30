@@ -5,7 +5,7 @@ import numpy as np
 
 
 MODEL_PATH = "../results/resnet50_pneumonia_finetuned_model.keras"
-IMAGE_PATH = "../chest_xray/test/IM-0019-0001.jpeg"
+IMAGE_PATH = "../chest_xray/test/NORMAL/IM-0019-0001.jpeg"
 
 
 
