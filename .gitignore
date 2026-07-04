@@ -1,25 +1,33 @@
-# Python cache
+# Python
 __pycache__/
 *.pyc
 *.pyo
 
-# Virtual environments
+# macOS
+.DS_Store
+
+# Environments
 venv/
 .venv/
 env/
+pneumo-env/
 
 # Dataset
 chest_xray/
+data/
+
+# Federated copied client data
+federated_learning/clients_data/
 
 # Trained models
 *.keras
 *.h5
+*.hdf5
+
+# Large generated outputs
 results/
 
-# System files
-.DS_Store
-
-# IDE files
+# IDE
 .vscode/
 .idea/
 
