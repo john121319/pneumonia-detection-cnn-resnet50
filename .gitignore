@@ -18,7 +18,9 @@ data/
 
 # Federated copied client data
 federated_learning/clients_data/
-
+federated_learning/predict_federated.py
+federated_learning/clients_data/
+federated_learning/clients_data_non_iid/
 # Trained models
 *.keras
 *.h5

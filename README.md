@@ -5,11 +5,11 @@ This project focuses on pneumonia detection from chest X-ray images using deep l
 The project compares:
 
 * A custom CNN baseline
-* ResNet50 transfer learning
-* ResNet50 with data augmentation
+* ResNet50 transfer learning with data augmentation
 * Fine-tuned ResNet50
 * Grad-CAM explainability
-* A multi-client federated CNN using Federated Averaging
+* IID federated CNN using Federated Averaging
+* Non-IID federated CNN using Federated Averaging
 
 The long-term research direction of this project is:
 
@@ -47,7 +47,7 @@ Model updates are aggregated
 Global model
 ```
 
-In this project, the centralized deep learning experiments are first developed and evaluated. The project is then extended into a simulated three-client federated learning environment.
+In this project, centralized deep learning experiments are first developed and evaluated. The project is then extended into simulated IID and Non-IID three-client federated learning environments.
 
 ---
 
@@ -62,10 +62,11 @@ The project aims to:
 5. Compare centralized models using medical classification metrics
 6. Apply Grad-CAM for explainability
 7. Simulate multiple federated clients
-8. Train local client models
-9. Aggregate client weights using Federated Averaging
-10. Evaluate the best global federated model
-11. Analyze confusion matrix and ROC-AUC performance
+8. Compare IID and Non-IID client distributions
+9. Train local client models
+10. Aggregate client weights using weighted Federated Averaging
+11. Evaluate global federated models using accuracy, precision, recall, F1-score, confusion matrix, sensitivity, specificity, and ROC-AUC
+12. Analyze how client data heterogeneity affects global model behavior
 
 ---
 
@@ -93,21 +94,21 @@ chest_xray/
 
 Dataset summary:
 
-| Split      | Number of Images |
-| ---------- | ---------------: |
-| Train      |            5,216 |
-| Validation |               16 |
-| Test       |              624 |
+| Split | Number of Images |
+|---|---:|
+| Train | 5,216 |
+| Validation | 16 |
+| Test | 624 |
 
 The test set contains:
 
-| Class     | Images |
-| --------- | -----: |
-| NORMAL    |    234 |
-| PNEUMONIA |    390 |
-| Total     |    624 |
+| Class | Images |
+|---|---:|
+| NORMAL | 234 |
+| PNEUMONIA | 390 |
+| Total | 624 |
 
-> Note: The original validation set is very small, containing only 16 images. Therefore, validation metrics may fluctuate considerably between epochs.
+> Note: The original validation set is very small, containing only 16 images. Therefore, validation metrics may fluctuate considerably between epochs. This is a limitation of the current project.
 
 ---
 
@@ -115,7 +116,7 @@ The test set contains:
 
 ```text
 pneumonia-detection-cnn-resnet50/
-├── chest_xray/
+├── chest_xray/                       # Dataset folder, not uploaded to GitHub
 │   ├── train/
 │   ├── val/
 │   └── test/
@@ -136,19 +137,26 @@ pneumonia-detection-cnn-resnet50/
 │   └── evaluate_models.py
 │
 ├── federated_learning/
-│   ├── create_clients.py
 │   ├── model.py
-│   ├── train_federated.py
-│   ├── evaluate_federated.py
-│   └── clients_data/
+│   ├── create_iid_clients.py
+│   ├── train_iid_federated.py
+│   ├── evaluate_iid_federated.py
+│   ├── create_non_iid_clients.py
+│   ├── train_non_iid_federated.py
+│   ├── evaluate_non_iid_federated.py
+│   ├── clients_data/                 # Generated IID client data, ignored by Git
+│   └── clients_data_non_iid/         # Generated Non-IID client data, ignored by Git
 │
-├── results/
+├── results/                          # Generated models, metrics, and figures, ignored by Git
 │   ├── cnn_pneumonia_detection_model.keras
 │   ├── resnet50_pneumonia_augmented_model.keras
 │   ├── resnet50_pneumonia_finetuned_model.keras
 │   ├── federated_cnn_best_model.keras
 │   ├── federated_cnn_final_model.keras
 │   ├── federated_training_history.csv
+│   ├── federated_cnn_non_iid_best_model.keras
+│   ├── federated_cnn_non_iid_final_model.keras
+│   ├── federated_non_iid_training_history.csv
 │   ├── pneumonia_gradcam_original.png
 │   ├── pneumonia_gradcam_heatmap.png
 │   ├── pneumonia_gradcam_output.png
@@ -156,7 +164,9 @@ pneumonia-detection-cnn-resnet50/
 │   ├── resnet50_augmented_confusion_matrix.png
 │   ├── resnet50_fine_tuned_confusion_matrix.png
 │   ├── federated_cnn_best_confusion_matrix.png
-│   └── federated_cnn_best_roc_curve.png
+│   ├── federated_cnn_best_roc_curve.png
+│   ├── federated_cnn_non_iid_confusion_matrix.png
+│   └── federated_cnn_non_iid_roc_curve.png
 │
 ├── test_images/
 ├── requirements.txt
@@ -164,7 +174,7 @@ pneumonia-detection-cnn-resnet50/
 └── README.md
 ```
 
-The dataset, generated client data, and large trained model files should normally be excluded from GitHub using `.gitignore`.
+The dataset, generated client data, trained model files, and generated result files should normally be excluded from GitHub using `.gitignore`.
 
 ---
 
@@ -329,13 +339,13 @@ This allows the pretrained feature extractor to adapt more closely to chest X-ra
 
 The models were evaluated on the same 624-image test set.
 
-## Overall Results
+## Overall Centralized Results
 
-| Model                      | Accuracy | Pneumonia Precision | Pneumonia Recall | Pneumonia F1-score |
-| -------------------------- | -------: | ------------------: | ---------------: | -----------------: |
-| CNN Baseline               |   75.48% |                 72% |              99% |                84% |
-| ResNet50 with Augmentation |   86.06% |                 84% |              97% |                90% |
-| ResNet50 Fine-Tuned        |   86.22% |                 83% |              97% |                90% |
+| Model | Accuracy | Pneumonia Precision | Pneumonia Recall | Pneumonia F1-score |
+|---|---:|---:|---:|---:|
+| CNN Baseline | 75.48% | 72% | 99% | 84% |
+| ResNet50 with Augmentation | 86.06% | 84% | 97% | 90% |
+| ResNet50 Fine-Tuned | 86.22% | 83% | 97% | 90% |
 
 ---
 
@@ -466,7 +476,7 @@ Grad-CAM provides model interpretability, but activation maps should be interpre
 
 The centralized models use a single training dataset.
 
-The federated experiment instead simulates multiple hospitals:
+The federated experiments instead simulate multiple hospitals:
 
 ```text
 Client 1
@@ -493,7 +503,7 @@ Client 3 trains locally
     ↓
 Collect client model weights
     ↓
-Federated Averaging
+Weighted Federated Averaging
     ↓
 Update global model
     ↓
@@ -504,31 +514,9 @@ This process is repeated over multiple communication rounds.
 
 ---
 
-## Simulated Federated Clients
-
-The original training set was divided among 3 simulated clients.
-
-Approximate client sizes:
-
-| Client   | Training Images |
-| -------- | --------------: |
-| Client 1 |           1,738 |
-| Client 2 |           1,738 |
-| Client 3 |           1,740 |
-
-Total:
-
-```text
-5,216 training images
-```
-
-The current experiment represents an approximately IID-like client partition because the clients have similar sample sizes and class distributions.
-
----
-
 ## Federated CNN
 
-A lightweight CNN was used for the federated experiment.
+A lightweight CNN was used for the federated experiments.
 
 Input shape:
 
@@ -550,42 +538,71 @@ A smaller CNN was selected instead of ResNet50 to reduce local training cost acr
 
 ## Weighted Federated Averaging
 
-The improved federated implementation uses weighted averaging.
+The implementation uses weighted averaging.
 
 Instead of giving every client exactly equal influence, the aggregation considers client sample count:
 
 ```text
-Client contribution
-        ∝
-Number of local training samples
+Client contribution ∝ Number of local training samples
 ```
 
 Conceptually:
 
 ```text
-New Global Weights
-=
-Weighted average of client weights
+New Global Weights = Weighted average of client weights
 ```
 
-Because the three clients currently have very similar dataset sizes, their aggregation contributions are also very similar.
+For three clients:
+
+```text
+W_global = (n1 × W1 + n2 × W2 + n3 × W3) / (n1 + n2 + n3)
+```
+
+where:
+
+```text
+W1, W2, W3 = client model weights
+n1, n2, n3 = number of local training samples
+```
 
 ---
 
-# Part 8 — Federated Training Results
+# Part 8 — IID Federated Learning Experiment
 
-The federated model was trained for 5 communication rounds.
+## IID Client Partition
 
-Latest experiment:
+In the IID experiment, the original training set was divided approximately equally across three simulated clients.
 
-| Round       |       Loss |   Accuracy |  Precision |     Recall |
-| ----------- | ---------: | ---------: | ---------: | ---------: |
-| Initial     |     0.6900 |     62.50% |     62.50% |    100.00% |
+Approximate client sizes:
+
+| Client | Training Images |
+|---|---:|
+| Client 1 | 1,738 |
+| Client 2 | 1,738 |
+| Client 3 | 1,740 |
+
+Total:
+
+```text
+5,216 training images
+```
+
+This experiment represents an approximately IID-like client partition because the clients have similar sample sizes and similar class distributions.
+
+---
+
+## IID Federated Training Results
+
+The IID federated model was trained for 5 communication rounds.
+
+| Round | Loss | Accuracy | Precision | Recall |
+|---|---:|---:|---:|---:|
+| Initial | 0.6900 | 62.50% | 62.50% | 100.00% |
 | **Round 1** | **0.3709** | **84.13%** | **81.16%** | **97.18%** |
-| Round 2     |     0.5018 |     80.29% |     77.08% |     97.44% |
-| Round 3     |     0.5177 |     80.61% |     77.28% |     97.69% |
-| Round 4     |     0.6004 |     80.61% |     77.06% |     98.21% |
-| Round 5     |     0.4497 |     83.81% |     80.81% |     97.18% |
+| Round 2 | 0.5018 | 80.29% | 77.08% | 97.44% |
+| Round 3 | 0.5177 | 80.61% | 77.28% | 97.69% |
+| Round 4 | 0.6004 | 80.61% | 77.06% | 98.21% |
+| Round 5 | 0.4497 | 83.81% | 80.81% | 97.18% |
 
 Best round:
 
@@ -599,28 +616,23 @@ Best accuracy:
 84.13%
 ```
 
-The best global model was automatically saved as:
+The best IID global model was saved as:
 
 ```text
 results/federated_cnn_best_model.keras
 ```
 
-The final round model was separately saved as:
-
-```text
-results/federated_cnn_final_model.keras
-```
-
 ---
 
-# Part 9 — Best Federated Model Evaluation
+## Best IID Federated Model Evaluation
 
-The best federated model achieved:
+The best IID federated model achieved:
 
 ```text
 Accuracy: 84.13%
 Precision: 81.16%
 Pneumonia Recall: 97.18%
+F1-score: 88.45%
 ROC-AUC: 0.9442
 ```
 
@@ -637,9 +649,7 @@ Classification report:
 weighted avg     0.8560    0.8413    0.8329       624
 ```
 
----
-
-## Federated Confusion Matrix
+IID confusion matrix:
 
 ```text
                  Predicted
@@ -649,107 +659,192 @@ Actual NORMAL    146      88
 Actual PNEUMONIA  11     379
 ```
 
+Medical screening metrics:
+
+```text
+Sensitivity: 97.18%
+Specificity: 62.39%
+```
+
+The IID federated model shows high pneumonia sensitivity but lower specificity.
+
+---
+
+# Part 9 — Non-IID Federated Learning Experiment
+
+## Why Non-IID?
+
+Real federated learning clients usually do not have the same data distribution.
+
+For example:
+
+```text
+Hospital A may have mostly normal screening cases
+Hospital B may have many pneumonia cases
+Hospital C may have mixed cases
+```
+
+To simulate this, a Non-IID client partition was created.
+
+---
+
+## Non-IID Client Partition
+
+The Non-IID experiment intentionally gives each client a different class distribution:
+
+| Client | NORMAL | PNEUMONIA | Total | Distribution |
+|---|---:|---:|---:|---|
+| Client 1 | 938 | 387 | 1,325 | Mostly NORMAL |
+| Client 2 | 134 | 2,712 | 2,846 | Mostly PNEUMONIA |
+| Client 3 | 269 | 776 | 1,045 | Mixed, pneumonia-heavy |
+| **Total** | **1,341** | **3,875** | **5,216** |  |
+
+This creates a more realistic and more difficult federated learning scenario.
+
+---
+
+## Non-IID Federated Training Results
+
+The Non-IID federated model was trained for 5 communication rounds.
+
+| Round | Loss | Accuracy | Precision | Recall |
+|---|---:|---:|---:|---:|
+| Initial | 0.6902 | 62.50% | 62.50% | 100.00% |
+| Round 1 | 0.5678 | 62.50% | 62.50% | 100.00% |
+| **Round 2** | **0.3985** | **84.29%** | **81.74%** | **96.41%** |
+| Round 3 | 0.4311 | 80.13% | 76.81% | 97.69% |
+| Round 4 | 0.5191 | 79.17% | 75.90% | 97.69% |
+| Round 5 | 0.5671 | 80.13% | 77.14% | 96.92% |
+
+Best round:
+
+```text
+Round 2
+```
+
+Best accuracy:
+
+```text
+84.29%
+```
+
+The best Non-IID global model was saved as:
+
+```text
+results/federated_cnn_non_iid_best_model.keras
+```
+
+---
+
+## Best Non-IID Federated Model Evaluation
+
+The best Non-IID federated model achieved:
+
+```text
+Accuracy: 84.29%
+Precision: 81.74%
+Pneumonia Recall: 96.41%
+F1-score: 88.47%
+ROC-AUC: 0.9365
+```
+
+Classification report:
+
+```text
+              precision    recall  f1-score   support
+
+      NORMAL     0.9146    0.6410    0.7538       234
+   PNEUMONIA     0.8174    0.9641    0.8847       390
+
+    accuracy                         0.8429       624
+   macro avg     0.8660    0.8026    0.8192       624
+weighted avg     0.8539    0.8429    0.8356       624
+```
+
+Non-IID confusion matrix:
+
+```text
+                 Predicted
+              NORMAL  PNEUMONIA
+
+Actual NORMAL    150      84
+Actual PNEUMONIA  14     376
+```
+
+Medical screening metrics:
+
+```text
+Sensitivity: 96.41%
+Specificity: 64.10%
+```
+
 Interpretation:
 
-### True Negatives
+* 150 NORMAL images were correctly classified as NORMAL
+* 84 NORMAL images were incorrectly classified as PNEUMONIA
+* 14 PNEUMONIA images were incorrectly classified as NORMAL
+* 376 PNEUMONIA images were correctly classified as PNEUMONIA
 
-```text
-146
-```
-
-146 NORMAL X-rays were correctly classified as NORMAL.
-
-### False Positives
-
-```text
-88
-```
-
-88 NORMAL X-rays were incorrectly classified as PNEUMONIA.
-
-### False Negatives
-
-```text
-11
-```
-
-11 PNEUMONIA X-rays were incorrectly classified as NORMAL.
-
-### True Positives
-
-```text
-379
-```
-
-379 PNEUMONIA X-rays were correctly classified as PNEUMONIA.
+The Non-IID model maintained high pneumonia sensitivity while slightly improving specificity compared with the IID federated model.
 
 ---
 
-## Sensitivity and Specificity
+# Part 10 — IID vs Non-IID Federated Comparison
 
-Pneumonia sensitivity:
+| Model | Accuracy | Pneumonia Precision | Pneumonia Recall | Pneumonia F1-score | ROC-AUC |
+|---|---:|---:|---:|---:|---:|
+| IID Federated CNN | 84.13% | 81.16% | 97.18% | 88.45% | 94.42% |
+| Non-IID Federated CNN | 84.29% | 81.74% | 96.41% | 88.47% | 93.65% |
 
-```text
-97.18%
-```
+## Interpretation
 
-This means the model detected 379 of 390 pneumonia cases.
-
-Specificity:
-
-```text
-62.39%
-```
-
-This means the model correctly identified 146 of 234 normal cases.
-
-The model therefore demonstrates:
+The Non-IID federated model achieved slightly higher accuracy:
 
 ```text
-High pneumonia sensitivity
-Lower specificity
+84.29% vs 84.13%
 ```
 
-This indicates a screening-oriented behavior with relatively few missed pneumonia cases but a higher number of false-positive alerts.
+However, the IID federated model achieved slightly higher pneumonia recall and ROC-AUC:
+
+```text
+IID Recall: 97.18%
+Non-IID Recall: 96.41%
+
+IID ROC-AUC: 94.42%
+Non-IID ROC-AUC: 93.65%
+```
+
+Therefore, the Non-IID model should not be described as clearly superior overall.
+
+A more accurate interpretation is:
+
+```text
+The Non-IID federated model achieved similar accuracy to the IID model, but showed a small reduction in pneumonia recall and ROC-AUC. This suggests that data heterogeneity can affect global model behavior, especially in medical screening tasks where sensitivity is important.
+```
+
+The Non-IID experiment also showed that more communication rounds did not always improve global performance. The best Non-IID model was achieved at round 2, while later rounds showed lower accuracy. This may be related to client drift caused by different client data distributions.
 
 ---
 
-## ROC-AUC
+# Part 11 — Centralized vs Federated Comparison
 
-The best federated CNN achieved:
+| Model | Accuracy | Pneumonia Precision | Pneumonia Recall | Pneumonia F1-score | ROC-AUC |
+|---|---:|---:|---:|---:|---:|
+| CNN Baseline | 75.48% | 72.00% | 99.00% | 84.00% | Not calculated |
+| ResNet50 Augmented | 86.06% | 84.00% | 97.00% | 90.00% | Not calculated |
+| ResNet50 Fine-Tuned | 86.22% | 83.00% | 97.00% | 90.00% | Not calculated |
+| IID Federated CNN | 84.13% | 81.16% | 97.18% | 88.45% | 94.42% |
+| Non-IID Federated CNN | 84.29% | 81.74% | 96.41% | 88.47% | 93.65% |
 
-```text
-ROC-AUC = 0.9442
-```
+## Overall Interpretation
 
-ROC-AUC evaluates discrimination performance across many possible decision thresholds.
+The centralized fine-tuned ResNet50 achieved the highest overall accuracy.
 
-This result indicates strong class-separation ability, even though the default threshold of `0.5` still produces a substantial number of false-positive predictions.
-
----
-
-# Part 10 — Centralized vs Federated Comparison
-
-| Model               | Accuracy | Pneumonia Precision | Pneumonia Recall | Pneumonia F1 |
-| ------------------- | -------: | ------------------: | ---------------: | -----------: |
-| CNN Baseline        |   75.48% |                 72% |              99% |          84% |
-| ResNet50 Augmented  |   86.06% |                 84% |              97% |          90% |
-| ResNet50 Fine-Tuned |   86.22% |                 83% |              97% |          90% |
-| Federated CNN       |   84.13% |              81.16% |           97.18% |       88.45% |
-
-The fine-tuned ResNet50 achieved the highest centralized accuracy.
-
-The federated CNN achieved:
-
-```text
-84.13% accuracy
-97.18% pneumonia recall
-0.9442 ROC-AUC
-```
-
-while simulating decentralized local training across three clients.
+The federated CNN models achieved competitive performance while simulating decentralized local training across multiple clients.
 
 The results do not demonstrate that federated learning is universally superior to centralized learning. Instead, they show that competitive classification performance can be maintained in a simulated multi-client training environment.
+
+The IID and Non-IID federated experiments demonstrate that client data distribution can affect global model behavior, model stability, recall, and ROC-AUC.
 
 ---
 
@@ -783,14 +878,12 @@ This demonstrates why accuracy alone can be misleading on imbalanced medical dat
 
 ## 2. More Federated Rounds Did Not Always Improve Performance
 
-The best global test accuracy occurred before the final round.
+In both IID and Non-IID federated experiments, the best global test accuracy occurred before the final communication round.
 
 This demonstrates that:
 
 ```text
-More communication rounds
-≠
-Guaranteed better global generalization
+More communication rounds ≠ guaranteed better global generalization
 ```
 
 Possible explanations include:
@@ -813,7 +906,23 @@ This suggests that stronger local optimization does not automatically produce a 
 
 ---
 
-## 4. Best-Model Checkpointing Is Important
+## 4. Non-IID Data Can Affect Global Model Behavior
+
+The Non-IID experiment used strongly different client distributions:
+
+```text
+Client 1: mostly NORMAL
+Client 2: mostly PNEUMONIA
+Client 3: mixed
+```
+
+The global model still achieved competitive accuracy, but recall and ROC-AUC slightly decreased compared with the IID federated experiment.
+
+This shows how data heterogeneity can affect federated learning performance.
+
+---
+
+## 5. Best-Model Checkpointing Is Important
 
 The project saves:
 
@@ -831,7 +940,7 @@ This prevents the final communication round from automatically replacing a bette
 
 ---
 
-## 5. Federated Learning Does Not Automatically Guarantee Complete Privacy
+## 6. Federated Learning Does Not Automatically Guarantee Complete Privacy
 
 This project simulates decentralized training because client training images remain in local client partitions.
 
@@ -921,22 +1030,22 @@ python gradcam.py
 
 ---
 
-## 9. Create Federated Clients
+## 9. Create IID Federated Clients
 
 ```bash
 cd federated_learning
-python create_clients.py
+python create_iid_clients.py
 ```
 
-This creates three simulated client datasets.
+This creates three simulated IID-like client datasets.
 
 ---
 
-## 10. Train Federated Model
+## 10. Train IID Federated Model
 
 ```bash
 cd federated_learning
-python train_federated.py
+python train_iid_federated.py
 ```
 
 The script:
@@ -953,11 +1062,11 @@ The script:
 
 ---
 
-## 11. Evaluate Best Federated Model
+## 11. Evaluate IID Federated Model
 
 ```bash
 cd federated_learning
-python evaluate_federated.py
+python evaluate_iid_federated.py
 ```
 
 This generates:
@@ -966,6 +1075,43 @@ This generates:
 * Confusion matrix
 * ROC-AUC
 * ROC curve
+
+---
+
+## 12. Create Non-IID Federated Clients
+
+```bash
+cd federated_learning
+python create_non_iid_clients.py
+```
+
+This creates three simulated Non-IID client datasets.
+
+---
+
+## 13. Train Non-IID Federated Model
+
+```bash
+cd federated_learning
+python train_non_iid_federated.py
+```
+
+---
+
+## 14. Evaluate Non-IID Federated Model
+
+```bash
+cd federated_learning
+python evaluate_non_iid_federated.py
+```
+
+This generates:
+
+* Classification report
+* Confusion matrix
+* ROC-AUC
+* ROC curve
+* Sensitivity and specificity
 
 ---
 
@@ -1003,7 +1149,10 @@ pip install tensorflow numpy matplotlib pillow scikit-learn
 * Fine-Tuning
 * Data Augmentation
 * Grad-CAM
+* Federated Learning
 * Federated Averaging
+* IID Client Simulation
+* Non-IID Client Simulation
 * ROC-AUC Analysis
 
 ---
@@ -1028,6 +1177,8 @@ Through this project, I learned:
 * Global model aggregation
 * Weighted FedAvg
 * Communication rounds
+* IID vs Non-IID data distributions
+* Client drift and data heterogeneity
 * Best-round checkpointing
 * Class imbalance interpretation
 * ROC-AUC evaluation
@@ -1041,15 +1192,15 @@ Through this project, I learned:
 This project has several important limitations:
 
 1. The validation set contains only 16 images
-2. The client partition is approximately IID-like
-3. The simulated clients are not real hospitals
-4. No differential privacy mechanism is currently implemented
-5. No secure aggregation mechanism is currently implemented
-6. The federated experiment uses a lightweight CNN rather than federated ResNet50
-7. The experiment has not yet been repeated across multiple random seeds
-8. Threshold optimization has not yet been completed
-9. Grad-CAM localization is not equivalent to clinical explanation
-10. The model is a research and educational prototype, not a clinical diagnostic system
+2. The simulated clients are not real hospitals
+3. No differential privacy mechanism is currently implemented
+4. No secure aggregation mechanism is currently implemented
+5. The federated experiment uses a lightweight CNN rather than federated ResNet50
+6. The experiment has not yet been repeated across multiple random seeds
+7. Threshold optimization has not yet been completed
+8. Grad-CAM localization is not equivalent to clinical explanation
+9. The model is a research and educational prototype, not a clinical diagnostic system
+10. Best-round selection in the current federated scripts is based on test-set performance; a stronger research version should use a separate validation set for model selection and reserve the test set for final evaluation only
 
 ---
 
@@ -1058,12 +1209,11 @@ This project has several important limitations:
 Planned future improvements include:
 
 * Create a better validation split
+* Use validation-based model selection for federated rounds
 * Run experiments across multiple random seeds
 * Report mean performance and standard deviation
 * Add threshold optimization
 * Compare sensitivity and specificity across thresholds
-* Simulate Non-IID client distributions
-* Compare IID and Non-IID federated learning
 * Compare centralized CNN and federated CNN directly
 * Add class weighting
 * Add client sampling
@@ -1082,25 +1232,31 @@ Planned future improvements include:
 
 # Planned Research Extension
 
-The next major experiment is:
+The current research progression is:
 
 ```text
+Centralized CNN
+        ↓
+ResNet50 Transfer Learning
+        ↓
+Fine-Tuned ResNet50
+        ↓
+Grad-CAM Explainability
+        ↓
 IID Federated Learning
         ↓
 Non-IID Federated Learning
         ↓
 IID vs Non-IID Comparison
         ↓
-Centralized vs Federated Comparison
-        ↓
-Differential Privacy
+FedProx / Differential Privacy / Secure Aggregation
 ```
 
 This progression supports the long-term research topic:
 
 **Federated Learning for Privacy-Preserving Medical Image Classification**
 
----
+
 
 # Disclaimer
 
